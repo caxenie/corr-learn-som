@@ -1,6 +1,6 @@
 % function to visualize network data at a given iteration in runtime
-function visualize_runtime(sensory_data, populations, tau, t, d)
-if(d~=length(sensory_data.x) && tau~=1)
+function visualize_runtime(sensory_data, populations, d)
+if(d~=length(sensory_data.x))
     set(gcf, 'color', 'w');
     % activities for each population (both overall activity and homeostasis)
     subplot(3, 3, 1);
@@ -19,23 +19,18 @@ if(d~=length(sensory_data.x) && tau~=1)
     subplot(3, 3, 5);
     acth7 = plot(populations(2).a,  '-b', 'LineWidth', 2); box off;axis([0,  populations(1).lsize, 0,  max(populations(2).a)]);
     xlabel('neuron index'); ylabel('activation in layer 2');
-    hpc0 = subplot(3, 3, 6);
-    ax0=get(hpc0,'position'); % Save the position as ax
-    set(hpc0,'position',ax0); % Manually setting this holds the position with colorbar
-    acth8 = imagesc(populations(1).Wint); colorbar; set(gca,'XAxisLocation','top');
-    xlabel('neuron index'); ylabel('neurons index'); title('WTA weights');
-    
+       
     % hebbian links between populations
     hpc1 = subplot(3, 3, 7);
     ax1=get(hpc1,'position'); % Save the position as ax
     set(hpc1,'position',ax1); % Manually setting this holds the position with colorbar
-    acth9 = imagesc(populations(1).Wext); caxis([0, max(populations(1).Wext(:))]); colorbar;
+    acth9 = imagesc(populations(1).Wcross); caxis([0, max(populations(1).Wcross(:))]); colorbar;
     box off; grid off;set(gca,'XAxisLocation','top');
     xlabel('layer 1 - neuron index'); ylabel('layer 2 - neuron index'); title('HL weights 1->2');
     hpc2 = subplot(3, 3, 8);
     ax2 =get(hpc2,'position'); % Save the position as ax
     set(hpc2,'position',ax2); % Manually setting this holds the position with colorbar
-    acth10= imagesc(populations(2).Wext); caxis([0, max(populations(2).Wext(:))]); colorbar;
+    acth10= imagesc(populations(2).Wcross); caxis([0, max(populations(2).Wcross(:))]); colorbar;
     box off; grid off;set(gca,'XAxisLocation','top');
     xlabel('layer 2 - neuron index'); ylabel('layer 1 - neuron index'); title('HL weights 2->1');
     
@@ -46,17 +41,16 @@ if(d~=length(sensory_data.x) && tau~=1)
     set(acth5, 'YData', sensory_data.y(d));
     set(acth6, 'YDataSource', 'populations(1).a');
     set(acth7, 'YDataSource','populations(2).a');
-    set(acth8, 'CData', populations(1).Wint);
-    set(acth9, 'CData', populations(1).Wext);
-    set(acth10,'CData', populations(2).Wext);
+    set(acth9, 'CData', populations(1).Wcross);
+    set(acth10,'CData', populations(2).Wcross);
     drawnow;
 else % post-runtime visulization
     set(gcf, 'color', 'white');
     for pop_idx = 1:length(populations)
         subplot(1, length(populations), pop_idx);
-        imagesc(populations(pop_idx).Wext); caxis([0,max(populations(pop_idx).Wext(:))]); colorbar; box off;  
+        imagesc(populations(pop_idx).Wcross); caxis([0,max(populations(pop_idx).Wcross(:))]); colorbar; box off;  
         set(gca,'XAxisLocation','top');
-        title(sprintf('\t Max value of W is %d | Min value of W is %d', max(populations(pop_idx).Wext(:)), min(populations(pop_idx).Wext(:))));
+        title(sprintf('\t Max value of W is %d | Min value of W is %d', max(populations(pop_idx).Wcross(:)), min(populations(pop_idx).Wcross(:))));
     end
 end
 end
