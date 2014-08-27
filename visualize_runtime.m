@@ -5,15 +5,15 @@ if(d~=length(sensory_data.x))
     % activities for each population (both overall activity and homeostasis)
     subplot(3, 3, 1);
     
-    acth3 = plot(population_encoder(sensory_data.x(d), sensory_data.min_val, sensory_data.max_val,  populations(1).lsize), '.r', 'LineWidth', 2); box off;
+    acth3 = plot(population_encoder(sensory_data.x(d),  sensory_data.max_val,  populations(1).lsize), '.r', 'LineWidth', 2); box off;
     xlabel('neuron index'); ylabel('pc coded input in layer 1');
     
     subplot(3, 3, 2);
     
-    acth4 = plot(population_encoder(sensory_data.y(d), sensory_data.min_val, sensory_data.max_val,  populations(1).lsize), '.b', 'LineWidth', 2); box off;
+    acth4 = plot(population_encoder(sensory_data.y(d), sensory_data.max_val,  populations(1).lsize), '.b', 'LineWidth', 2); box off;
     xlabel('neuron index'); ylabel('pc coded input in layer 2');
     
-    subplot(3, 3, 3);
+    subplot(3, 3, [3 9]);
     acth5 = plot(sensory_data.x(d), sensory_data.y(d), 'ok', 'MarkerEdgeColor', 'k', 'MarkerSize', 10); hold on; plot(sensory_data.x, sensory_data.y, '.g'); box off;
     xlabel('X'); ylabel('Y'); title('Input data');
     
@@ -38,15 +38,35 @@ if(d~=length(sensory_data.x))
     box off; grid off;set(gca,'XAxisLocation','top');
     xlabel('layer 2 - neuron index'); ylabel('layer 1 - neuron index'); title('HL weights 2->1');
     
+%     % plot the corresponding tuning curves
+%     subplot(3, 3, 7);
+%     pts = 1:length(populations(1).Winput);
+%     fx1 = zeros(populations(2).lsize, 1);
+%     for idx = 1:length(populations(1).Winput)
+%         fx1(idx) = exp(-(idx - populations(1).Winput(idx))^2/(2*(populations(1).s(idx))^2));
+%     end
+%     acth11 = plot(pts, fx1, 'r');hold all; box off;
+%     
+%     subplot(3, 3, 8);
+%     fx2 = zeros(populations(2).lsize, 1);
+%     for idx = 1:length(populations(2).Winput)
+%         fx2(idx) = exp(-(idx - populations(2).Winput(idx))^2/(2*(populations(2).s(idx))^2));
+%     end
+%     acth12 = plot(pts, fx2, 'b'); hold all; box off;
+    
     % refresh visualization
-    set(acth3, 'YData', population_encoder(sensory_data.x(d), sensory_data.min_val, sensory_data.max_val,  populations(1).lsize));
-    set(acth4, 'YData', population_encoder(sensory_data.y(d), sensory_data.min_val, sensory_data.max_val,  populations(1).lsize));
+    set(acth3, 'YData', population_encoder(sensory_data.x(d),  sensory_data.max_val,  populations(1).lsize));
+    set(acth4, 'YData', population_encoder(sensory_data.y(d),  sensory_data.max_val,  populations(1).lsize));
     set(acth5, 'XData', sensory_data.x(d));
     set(acth5, 'YData', sensory_data.y(d));
     set(acth6, 'YDataSource', 'populations(1).a');
     set(acth7, 'YDataSource','populations(2).a');
     set(acth9, 'CData', populations(1).Wcross);
     set(acth10,'CData', populations(2).Wcross);
+%     set(acth11, 'YData', fx1);
+%     set(acth11, 'XData', pts);
+%     set(acth12, 'YData', fx2);
+%     set(acth11, 'XData', pts);
     drawnow;
 else % post-runtime visulization
     set(gcf, 'color', 'white');
