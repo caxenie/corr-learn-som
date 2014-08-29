@@ -1,5 +1,5 @@
 % function to visualize network data at a given iteration in runtime
-function visualize_runtime(sensory_data, populations, d)
+function visualize_runtime(sensory_data, populations, d, learning_params)
 if(d~=length(sensory_data.x))
     set(gcf, 'color', 'w');
     % activities for each population (both overall activity and homeostasis)
@@ -13,7 +13,7 @@ if(d~=length(sensory_data.x))
     acth4 = plot(population_encoder(sensory_data.y(d), sensory_data.max_val,  populations(1).lsize), '.b', 'LineWidth', 2); box off;
     xlabel('neuron index'); ylabel('pc coded input in layer 2');
     
-    subplot(3, 3, [3 9]);
+    subplot(3, 3, 3);
     acth5 = plot(sensory_data.x(d), sensory_data.y(d), 'ok', 'MarkerEdgeColor', 'k', 'MarkerSize', 10); hold on; plot(sensory_data.x, sensory_data.y, '.g'); box off;
     xlabel('X'); ylabel('Y'); title('Input data');
     
@@ -37,6 +37,14 @@ if(d~=length(sensory_data.x))
     acth10= imagesc(populations(2).Wcross); caxis([0, max(populations(2).Wcross(:))]); colorbar;
     box off; grid off;set(gca,'XAxisLocation','top');
     xlabel('layer 2 - neuron index'); ylabel('layer 1 - neuron index'); title('HL weights 2->1');
+    
+    % learning params
+    subplot(3, 3, 9);
+    acth11= plot(d, learning_params.alphat(d), 'ok', 'MarkerEdgeColor', 'k', 'MarkerSize', 10); hold on; plot(learning_params.alphat, '.c'); box off;
+    xlabel('Epochs'); title('Learning rate adaptation');
+    subplot(3, 3, 6);
+    acth12= plot(d, learning_params.sigmat(d), 'ok', 'MarkerEdgeColor', 'k', 'MarkerSize', 10); hold on; plot(learning_params.sigmat, '.m'); box off;
+    xlabel('Epochs'); title('Neighborhood size adaptation');
     
 %     % plot the corresponding tuning curves
 %     subplot(3, 3, 7);
@@ -63,6 +71,8 @@ if(d~=length(sensory_data.x))
     set(acth7, 'YDataSource','populations(2).a');
     set(acth9, 'CData', populations(1).Wcross);
     set(acth10,'CData', populations(2).Wcross);
+    set(acth11, 'YData', learning_params.alphat(d));
+    set(acth12, 'YData', learning_params.sigmat(d));
 %     set(acth11, 'YData', fx1);
 %     set(acth11, 'XData', pts);
 %     set(acth12, 'YData', fx2);
