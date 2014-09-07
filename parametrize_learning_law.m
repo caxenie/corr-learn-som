@@ -8,7 +8,7 @@ switch(type)
         s = -floor(log10(tf))*10^(-(floor(log10(tf)))); % s<0 for decay
         p = abs(s*10^(floor(log10(tf)) + floor(log10(tf))/2));
         y = v0 - (v0)./(1+exp(s*(t-(tf/p)))) + vf;
-        %plot(t, y, '.r'); box off; set(gcf, 'color', 'w'); title('sigmoid adaptation law');
+        % plot(t, y, '.r'); box off; set(gcf, 'color', 'w'); title('sigmoid adaptation law');
     case 'invtime'
         B = (vf*tf - v0*t0)/(v0 - vf);
         A = v0*t0 + B*v0;
