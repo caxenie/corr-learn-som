@@ -1,0 +1,1 @@
+Sensory correlation learning neural network. Unsupervised learning of functional relationships between 2 input sensory streams. The network uses SOMs to encode the input data into a population code and Hebbian learning to extract the co-activation patterns encoding the function.
