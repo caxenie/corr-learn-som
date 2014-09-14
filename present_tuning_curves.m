@@ -16,7 +16,7 @@ for idx = 1:pop.lsize
 end
 % adjust axes
 axis([0, pop.lsize, 0, 1]); box off;
-xlabel('neuron index'); ylabel('learned tuning curve');
+xlabel('neuron index'); ylabel('learned tuning curves');
 subplot(2, 1, 2);
 % plot the uniformly distributed profile
 plot(neurons_idx, zeros(pop.lsize, 1), 'ok', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'k', 'MarkerSize', 5); hold on;
@@ -31,5 +31,5 @@ for idx = 1:pop.lsize
 end
 % adjust axes
 axis([0, pop.lsize, 0, 1]); box off;
-xlabel('neuron index'); ylabel('uniform tuning curve');
+xlabel('neuron index'); ylabel('uniform tuning curves');
 end
