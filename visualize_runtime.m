@@ -1,5 +1,6 @@
 % function to visualize network data at a given iteration in runtime
 function visualize_runtime(sensory_data, populations, d, learning_params)
+figure;
 if(d~=length(sensory_data.x))
     set(gcf, 'color', 'w');
     % activities for each population (both overall activity and homeostasis)

@@ -9,21 +9,21 @@ N_SOM      = 2;
 % number of neurons in each population
 N_NEURONS  = 200;
 % max MAX_EPOCHS for SOM relaxation
-MAX_EPOCHS = 50;
+MAX_EPOCHS = 500;
 % number of data samples 
-N_SAMPLES = 150;
+N_SAMPLES = 500;
 % decay factors
-ETA = 0.5; % activity decay
+ETA = 1.0; % activity decay
 XI = 1e-2; % weights decay
 %%% INIT INPUT DATA - RELATION IS EMBEDDED IN THE INPUT DATA PAIRS
 % switch between power-law relations (TODO add a more flexible way)
 exponent=2;
-% set up the interval of interest (i.e. +/- range)
+% set up the interval of interest (i.e. +/- range)hack the wowee 
 sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
-sensory_data.dist = 'uniform'; % {uniform, non-uniform}
+sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
 % choose between random data / sequentially ordered data to present to net
 sensory_data.order  = 'random';  % {random, ordered}
 switch (sensory_data.dist)
@@ -43,15 +43,11 @@ switch (sensory_data.dist)
             case 'random'
                 % generate NUM_VALS random samples in the given interval
                 sensory_data.x  = -sensory_data.range + rand(sensory_data.num_vals, 1)*(2*sensory_data.range);
-                sensory_data.y = sensory_data.x.^exponent;
-                sensory_data.x(sensory_data.num_vals/10:sensory_data.num_vals/2) = 0.0;
-                sensory_data.y(sensory_data.num_vals/10:sensory_data.num_vals/2) = 0.0;
+                sensory_data.y = nufrnd(sensory_data.x, -sensory_data.range, sensory_data.range, exponent);
             case 'ordered'
                 % generate NUM_VALS consecutive samples in the given interval
                 sensory_data.x  = linspace(-sensory_data.range, sensory_data.range, sensory_data.num_vals);
-                sensory_data.y = sensory_data.x.^exponent;
-                sensory_data.x(sensory_data.num_vals/10:sensory_data.num_vals/2) = 0.0;
-                sensory_data.y(sensory_data.num_vals/10:sensory_data.num_vals/2) = 0.0;
+                sensory_data.y = nufrnd(sensory_data.x, -sensory_data.range, sensory_data.range, exponent);
         end
 end
 %% CREATE NETWORK AND INITIALIZE
@@ -64,7 +60,7 @@ hwi = zeros(N_NEURONS, 1);
 % learning params
 t0 = 1;
 tf_train = MAX_EPOCHS;
-tf_test = 10*MAX_EPOCHS;
+tf_test = 5*MAX_EPOCHS;
 % init width of neighborhood kernel
 sigma0 = N_NEURONS/2;
 sigmaf = 1.0;
@@ -122,9 +118,9 @@ for t = 1:tf_train
 end % end for training epochs
 fprintf('Ended training sequence.\n');
 pause(2);
-present_tuning_curves(populations(1), sensory_data);
+present_tuning_curves(populations(1), sensory_data, exponent);
 pause(2);
-present_tuning_curves(populations(2), sensory_data);
+present_tuning_curves(populations(2), sensory_data, exponent);
 pause(2);
 fprintf('Start testing sequence ...\n');
 % prepare data for testing sequence
@@ -145,15 +141,11 @@ switch (sensory_data.dist)
             case 'random'
                 % generate NUM_VALS random samples in the given interval
                 sensory_data.x  = -sensory_data.range + rand(sensory_data.num_vals, 1)*(2*sensory_data.range);
-                sensory_data.y = sensory_data.x.^exponent;
-                sensory_data.x(sensory_data.num_vals/6:sensory_data.num_vals) = 0.0;
-                sensory_data.y(sensory_data.num_vals/6:sensory_data.num_vals) = 0.0;
+                sensory_data.y = nufrnd(sensory_data.x, -sensory_data.range, sensory_data.range, exponent);
             case 'ordered'
                 % generate NUM_VALS consecutive samples in the given interval
                 sensory_data.x  = linspace(-sensory_data.range, sensory_data.range, sensory_data.num_vals);
-                sensory_data.y = sensory_data.x.^exponent;
-                sensory_data.x(sensory_data.num_vals/6:sensory_data.num_vals) = 0.0;
-                sensory_data.y(sensory_data.num_vals/6:sensory_data.num_vals) = 0.0;
+                sensory_data.y = nufrnd(sensory_data.x, -sensory_data.range, sensory_data.range, exponent);
         end
 end
 % learning using Hebbian learning
