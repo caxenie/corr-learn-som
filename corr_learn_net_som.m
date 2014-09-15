@@ -9,7 +9,7 @@ N_SOM      = 2;
 % number of neurons in each population
 N_NEURONS  = 200;
 % max MAX_EPOCHS for SOM relaxation
-MAX_EPOCHS = 500;
+MAX_EPOCHS = 1000;
 % number of data samples 
 N_SAMPLES = 500;
 % decay factors
@@ -42,12 +42,12 @@ switch (sensory_data.dist)
         switch(sensory_data.order)
             case 'random'
                 % generate NUM_VALS random samples in the given interval
-                sensory_data.x  = -sensory_data.range + rand(sensory_data.num_vals, 1)*(2*sensory_data.range);
-                sensory_data.y = nufrnd(sensory_data.x, -sensory_data.range, sensory_data.range, exponent);
+                sensory_data.x  = 0.000001 + rand(sensory_data.num_vals, 1)*(sensory_data.range);
+                sensory_data.y = nufrnd(sensory_data.x, 0.000001, sensory_data.range, exponent);
             case 'ordered'
                 % generate NUM_VALS consecutive samples in the given interval
-                sensory_data.x  = linspace(-sensory_data.range, sensory_data.range, sensory_data.num_vals);
-                sensory_data.y = nufrnd(sensory_data.x, -sensory_data.range, sensory_data.range, exponent);
+                sensory_data.x  = linspace(0.000001, sensory_data.range, sensory_data.num_vals);
+                sensory_data.y = nufrnd(sensory_data.x, 0.000001, sensory_data.range, exponent);
         end
 end
 %% CREATE NETWORK AND INITIALIZE
@@ -118,9 +118,9 @@ for t = 1:tf_train
 end % end for training epochs
 fprintf('Ended training sequence.\n');
 pause(2);
-present_tuning_curves(populations(1), sensory_data, exponent);
+present_tuning_curves(populations(1), sensory_data);
 pause(2);
-present_tuning_curves(populations(2), sensory_data, exponent);
+present_tuning_curves(populations(2), sensory_data);
 pause(2);
 fprintf('Start testing sequence ...\n');
 % prepare data for testing sequence
@@ -140,12 +140,12 @@ switch (sensory_data.dist)
         switch(sensory_data.order)
             case 'random'
                 % generate NUM_VALS random samples in the given interval
-                sensory_data.x  = -sensory_data.range + rand(sensory_data.num_vals, 1)*(2*sensory_data.range);
-                sensory_data.y = nufrnd(sensory_data.x, -sensory_data.range, sensory_data.range, exponent);
+                sensory_data.x  = 0.000001 + rand(sensory_data.num_vals, 1)*(2*sensory_data.range);
+                sensory_data.y = nufrnd(sensory_data.x, 0.000001, sensory_data.range, exponent);
             case 'ordered'
                 % generate NUM_VALS consecutive samples in the given interval
-                sensory_data.x  = linspace(-sensory_data.range, sensory_data.range, sensory_data.num_vals);
-                sensory_data.y = nufrnd(sensory_data.x, -sensory_data.range, sensory_data.range, exponent);
+                sensory_data.x  = linspace(0.000001, sensory_data.range, sensory_data.num_vals);
+                sensory_data.y = nufrnd(sensory_data.x, 0.000001, sensory_data.range, exponent);
         end
 end
 % learning using Hebbian learning

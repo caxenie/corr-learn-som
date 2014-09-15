@@ -1,14 +1,11 @@
 % function to plot the learned tuning curves and the probability density
 % function of the input data
-function present_tuning_curves(pop, sdata, exponent)
+function present_tuning_curves(pop, sdata)
 figure; set(gcf, 'color', 'w');
 subplot(3,1,1);
 % plot the probability distribution of the input data to motivate the
 % density of the learned tuning curves
-x = -sdata.range:2*1/pop.lsize:sdata.range;
-N = 10000;
-px = x.^exponent/N;
-plot(x, px, 'LineWidth', 3);
+plot(sdata.y, sdata.x, 'LineWidth', 3);
 xlabel('input data, x'); ylabel('probability mass function, p(x)');
 subplot(3, 1, 2);
 neurons_idx = 1:pop.lsize;
