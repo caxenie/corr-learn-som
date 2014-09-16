@@ -5,8 +5,8 @@ figure; set(gcf, 'color', 'w');
 subplot(3,1,1);
 % plot the probability distribution of the input data to motivate the
 % density of the learned tuning curves
-plot(sdata.y, sdata.x, 'LineWidth', 3);
-xlabel('input data, x'); ylabel('probability mass function, p(x)');
+hist(sdata.x);
+xlabel('input data, x'); ylabel('value distribution');
 subplot(3, 1, 2);
 neurons_idx = 1:pop.lsize;
 plot(neurons_idx, zeros(pop.lsize, 1), 'ok', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'k', 'MarkerSize', 5); hold on;

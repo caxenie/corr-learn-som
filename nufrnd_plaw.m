@@ -1,6 +1,6 @@
 % function to generate non-uniform distributed values in a given interval
 % [vmin, vmax] for a powerlaw function
-function y = nufrnd(x, vmin, vmax, expn)
+function y = nufrnd_plaw(x, vmin, vmax, expn)
     if(expn==-1)
             y  = vmin*exp(log(vmax - vmin).*x);
     else
