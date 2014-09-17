@@ -7,66 +7,46 @@ DYN_VISUAL = 1;
 % number of populations in the network
 N_SOM      = 2;
 % number of neurons in each population
-N_NEURONS  = 200;
+N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
 MAX_EPOCHS = 200;
 % number of data samples
-N_SAMPLES = 4444;
+N_SAMPLES = 2222;
 % decay factors
 ETA = 1.0; % activity decay
 XI = 1e-2; % weights decay
 %%% INIT INPUT DATA - RELATION IS EMBEDDED IN THE INPUT DATA PAIRS
 % switch between power-law relations (TODO add a more flexible way)
 exponent=2;
-% set up the interval of interest (i.e. +/- range)hack the wowee
+% set up the interval of interest (i.e. +/- range)
 sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
 sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
-% choose between random data / sequentially ordered data to present to net
-sensory_data.order  = 'random';  % {random, ordered}
 % non-unifrom distribution type {power-law, Gauss dist}
-nufrnd_type       = 'plaw';
+nufrnd_type       = 'gauss';
 % generate training data
 switch (sensory_data.dist)
     case 'uniform'
-        switch(sensory_data.order)
-            case 'random'
-                % generate NUM_VALS random samples in the given interval
-                sensory_data.x  = -sensory_data.range + rand(sensory_data.num_vals, 1)*(2*sensory_data.range);
-                sensory_data.y = sensory_data.x.^exponent;
-            case 'ordered'
-                % generate NUM_VALS consecutive samples in the given interval
-                sensory_data.x  = linspace(-sensory_data.range, sensory_data.range, sensory_data.num_vals);
-                sensory_data.y = sensory_data.x.^exponent;
-        end
+        % generate NUM_VALS random samples in the given interval
+        sensory_data.x  = -sensory_data.range + rand(sensory_data.num_vals, 1)*(2*sensory_data.range);
+        sensory_data.y = sensory_data.x.^exponent;
     case 'non-uniform'
-        switch(sensory_data.order)
-            case 'random'
-                switch nufrnd_type
-                    case 'plaw'
-                        % generate NUM_VALS random samples in the given interval
-                        sensory_data.x = rand(sensory_data.num_vals, 1)*(sensory_data.range);
-                        sensory_data.x = nufrnd_plaw(sensory_data.x, 0.000001, sensory_data.range, exponent);
-                        sensory_data.y = sensory_data.x.^exponent;
-                    case 'gauss'
-                        % generate NUM_VALS random samples in the given interval
-                        sensory_data.x  = randn(sensory_data.num_vals, 1)*(2*sensory_data.range/10);
-                        sensory_data.y = sensory_data.x.^exponent;
-                end
-            case 'ordered'
-                switch nufrnd_type
-                    case 'plaw'
-                        % generate NUM_VALS consecutive samples in the given interval
-                        sensory_data.x  = linspace(0.000001, sensory_data.range, sensory_data.num_vals);
-                        sensory_data.x = nufrnd_plaw(sensory_data.x, 0.000001, sensory_data.range, exponent);
-                        sensory_data.y = sensory_data.x.^exponent;
-                    case 'gauss'
-                        sensory_data.x  = linspace(0.000001, sensory_data.range, sensory_data.num_vals);
-                        sensory_data.x  = randn(sensory_data.num_vals, 1)*(2*sensory_data.range/10);
-                        sensory_data.y = sensory_data.x.^exponent;
-                end
+        switch nufrnd_type
+            case 'plaw'
+                % generate NUM_VALS random samples in the given
+                % interval - the function is truncated only in the
+                % positive quadrant
+                sensory_data.x = rand(sensory_data.num_vals, 1)*(sensory_data.range);
+                sensory_data.x = nufrnd_plaw(sensory_data.x, 0.000001, sensory_data.range, exponent);
+                sensory_data.y = sensory_data.x.^exponent;
+            case 'gauss'
+                % generate NUM_VALS random samples in the given
+                % interval - the function is truncated only in the
+                % positive quadrant
+                sensory_data.x  = randn(sensory_data.num_vals, 1)*(sensory_data.range/3);
+                sensory_data.y = sensory_data.x.^exponent;
         end
 end
 %% CREATE NETWORK AND INITIALIZE
@@ -131,12 +111,13 @@ for t = 1:tf_learn_cross
                         case 'non-uniform'
                             populations(pidx).s(idx) = populations(pidx).s(idx) + ...
                                 learning_params.alphat(t)*hwi(idx)* ...
-                                ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
+                                0.5*((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
+                            %populations(pidx).s(idx) = (N_NEURONS/N_SAMPLES);
                     end
                 end
             end % end for population pidx
         end % end samples in the dataset
-    end % allow the som to learn the sensory space data distribution 
+    end % allow the som to learn the sensory space data distribution
     % learn the cross-modal correlation
     for didx = 1:sensory_data.num_vals
         % use the learned weights and compute activation
