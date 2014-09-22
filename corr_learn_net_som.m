@@ -9,7 +9,7 @@ N_SOM      = 2;
 % number of neurons in each population
 N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
-MAX_EPOCHS = 400;
+MAX_EPOCHS = 500;
 % number of data samples
 N_SAMPLES = 2222;
 % decay factors
@@ -64,7 +64,7 @@ switch (sensory_data.dist)
                 sensory_data.x = nufrnd_plaw(sensory_data.x, 0.00001, sensory_data.range, exponent);
                 sensory_data.y = sensory_data.x.^exponent;
             case 'gauss'
-                sensory_data.x  = randn(sensory_data.num_vals, 1)*(sensory_data.range/3);
+                sensory_data.x  = randn(sensory_data.num_vals, 1)*(sensory_data.range/4);
                 sensory_data.y = sensory_data.x.^exponent;
         end
 end
@@ -132,9 +132,10 @@ for t = 1:tf_learn_cross
                         case 'uniform'
                             populations(pidx).s(idx) = N_NEURONS/N_SAMPLES;
                         case 'non-uniform'
-                            populations(pidx).s(idx) = populations(pidx).s(idx) + ...
-                                learning_params.alphat(t)*hwi(idx)* ...
-                                ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
+%                             populations(pidx).s(idx) = populations(pidx).s(idx) + ...
+%                                 learning_params.alphat(t)*hwi(idx)* ...
+%                                 ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
+                            populations(pidx).s(idx) = N_NEURONS/N_SAMPLES;
                     end
                 end
             end % end for population pidx
