@@ -9,9 +9,9 @@ N_SOM      = 2;
 % number of neurons in each population
 N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
-MAX_EPOCHS = 500;
+MAX_EPOCHS = 400;
 % number of data samples
-N_SAMPLES = 5000;
+N_SAMPLES = 2222;
 % decay factors
 ETA = 1.0; % activity decay
 XI = 1e-3; % weights decay
@@ -24,8 +24,6 @@ sensory_data.range  = 1.0;
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
 sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
-% non-unifrom distribution type: power-law or Gauss, {plaw, gauss}
-nufrnd_type       = 'gauss';
 % generate training data
 switch (sensory_data.dist)
     case 'uniform'
@@ -33,19 +31,40 @@ switch (sensory_data.dist)
         sensory_data.x  = -sensory_data.range + rand(sensory_data.num_vals, 1)*(2*sensory_data.range);
         sensory_data.y = sensory_data.x.^exponent;
     case 'non-uniform'
+        % generate observations distributed as some continous heavy-tailed distribution. 
+        % options are powerlaw, lognormal, stretched (exponential), 
+        % cutoff (power-law), exponential, boundedplaw (powerlaw) and Gauss.
+        nufrnd_type  = 'gauss';
         switch nufrnd_type
-            case 'plaw'
-                % generate NUM_VALS random samples in the given
-                % interval - the function is truncated only in the
-                % positive quadrant
+            case 'powerlaw'
+                alpha = 2.5;
+                sensory_data.x = randht(sensory_data.num_vals, nufrnd_type, alpha);
+                sensory_data.y = sensory_data.x.^exponent;
+            case 'lognormal'
+                mu = 1;
+                sigma = 1;
+                sensory_data.x = randht(sensory_data.num_vals, nufrnd_type, mu, sigma);
+                sensory_data.y = sensory_data.x.^exponent;
+            case 'stretched'
+                lambda = 1;
+                beta = 1;
+                sensory_data.x = randht(sensory_data.num_vals, nufrnd_type, lambda, beta);
+                sensory_data.y = sensory_data.x.^exponent;          
+            case 'exponential'
+                lambda = 1;
+                sensory_data.x = randht(sensory_data.num_vals, nufrnd_type, lambda);
+                sensory_data.y = sensory_data.x.^exponent; 
+            case 'cutoff'
+                alpha = 2.5;
+                lambda = 1;
+                sensory_data.x = randht(sensory_data.num_vals, nufrnd_type, alpha, lambda);
+                sensory_data.y = sensory_data.x.^exponent;    
+            case 'boundedplaw'
                 sensory_data.x = rand(sensory_data.num_vals, 1)*(sensory_data.range);
-                sensory_data.x = nufrnd_plaw(sensory_data.x, 0.000001, sensory_data.range, exponent);
+                sensory_data.x = nufrnd_plaw(sensory_data.x, 0.00001, sensory_data.range, exponent);
                 sensory_data.y = sensory_data.x.^exponent;
             case 'gauss'
-                % generate NUM_VALS random samples in the given
-                % interval - the function is truncated only in the
-                % positive quadrant
-                sensory_data.x  = randn(sensory_data.num_vals, 1)*(sensory_data.range/4);
+                sensory_data.x  = randn(sensory_data.num_vals, 1)*(sensory_data.range/3);
                 sensory_data.y = sensory_data.x.^exponent;
         end
 end
@@ -69,7 +88,7 @@ alpha0 = 0.1;
 alphaf = 0.001;
 learning_params.alphat = parametrize_learning_law(alpha0, alphaf, t0, tf_learn_in, 'invtime');
 % cross-modal learning rule type
-cross_learning = 'oja';    % {hebb - Hebbain, covariance - Covariance, oja - Oja's Local PCA}
+cross_learning = 'hebb';    % {hebb - Hebbain, covariance - Covariance, oja - Oja's Local PCA}
 % mean activities for covariance learning
 avg1 = 0.0; avg2 = 0.0;
 %% NETWORK SIMULATION LOOP
@@ -111,8 +130,7 @@ for t = 1:tf_learn_cross
                     % with the same spread of the neurons tuning curves
                     switch(sensory_data.dist)
                         case 'uniform'
-                            populations(pidx).s(idx) = 0.045;
-                            %populations(pidx).s(idx) = (N_NEURONS/N_SAMPLES);
+                            populations(pidx).s(idx) = N_NEURONS/N_SAMPLES;
                         case 'non-uniform'
                             populations(pidx).s(idx) = populations(pidx).s(idx) + ...
                                 learning_params.alphat(t)*hwi(idx)* ...
@@ -151,7 +169,7 @@ for t = 1:tf_learn_cross
                 populations(2).Wcross = (1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a';
             case 'covariance'
                 % compute the mean value computation decay
-                OMEGA = 0.002 + 0.998/(t+1);
+                OMEGA = 0.002 + 0.998/(t+2);
                 % compute the average activity for Hebbian covariance rule
                 avg1 = (1-OMEGA)*avg1 + OMEGA*populations(1).a;
                 avg2 = (1-OMEGA)*avg2 + OMEGA*populations(2).a;
@@ -161,9 +179,9 @@ for t = 1:tf_learn_cross
             case 'oja'
                 % Oja's local PCA learning rule
                 populations(1).Wcross = ((1-XI)*populations(1).Wcross + XI*populations(1).a*populations(2).a')/...
-                                        sqrt(sum(sum((1-XI)*populations(1).Wcross + XI*populations(1).a*populations(2).a')));
+                    sqrt(sum(sum((1-XI)*populations(1).Wcross + XI*populations(1).a*populations(2).a')));
                 populations(2).Wcross = ((1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a')/...
-                                        sqrt(sum(sum((1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a')));
+                    sqrt(sum(sum((1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a')));
         end
     end % end for values in dataset
 end % end for training epochs
