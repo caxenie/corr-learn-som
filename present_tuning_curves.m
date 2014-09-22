@@ -32,11 +32,13 @@ subplot(3, 1, 3);
 plot(neurons_idx, zeros(pop.lsize, 1), 'ok', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'k', 'MarkerSize', 5); hold on;
 % for each neuron in the current population
 for idx = 1:pop.lsize
+    % default tuning curve width
+    def_s = pop.lsize/sdata.num_vals;
     % extract the preferred values (wight vector) of each neuron
     v_pref = -sdata.range + (idx-1)*(sdata.range/((pop.lsize)/2));
     % compute the tuning curve of the current neuron in the population
     x = -sdata.range:2*1/pop.lsize:sdata.range;
-    fx = exp(-(x-v_pref).^2/(2*pop.s(idx)^2));
+    fx = exp(-(x-v_pref).^2/(2*def_s^2));
     plot(fx, 'LineWidth', 3); hold all;
 end
 % adjust axes

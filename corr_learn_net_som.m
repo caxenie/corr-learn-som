@@ -9,22 +9,22 @@ N_SOM      = 2;
 % number of neurons in each population
 N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
-MAX_EPOCHS = 200;
+MAX_EPOCHS = 500;
 % number of data samples
-N_SAMPLES = 2222;
+N_SAMPLES = 5000;
 % decay factors
 ETA = 1.0; % activity decay
-XI = 1e-2; % weights decay
+XI = 1e-3; % weights decay
 %%% INIT INPUT DATA - RELATION IS EMBEDDED IN THE INPUT DATA PAIRS
 % switch between power-law relations (TODO add a more flexible way)
-exponent=2;
+exponent=3;
 % set up the interval of interest (i.e. +/- range)
 sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
 sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
-% non-unifrom distribution type {power-law, Gauss dist}
+% non-unifrom distribution type: power-law or Gauss, {plaw, gauss}
 nufrnd_type       = 'gauss';
 % generate training data
 switch (sensory_data.dist)
@@ -45,7 +45,7 @@ switch (sensory_data.dist)
                 % generate NUM_VALS random samples in the given
                 % interval - the function is truncated only in the
                 % positive quadrant
-                sensory_data.x  = randn(sensory_data.num_vals, 1)*(sensory_data.range/3);
+                sensory_data.x  = randn(sensory_data.num_vals, 1)*(sensory_data.range/4);
                 sensory_data.y = sensory_data.x.^exponent;
         end
 end
@@ -68,6 +68,10 @@ learning_params.sigmat = parametrize_learning_law(sigma0, sigmaf, t0, tf_learn_i
 alpha0 = 0.1;
 alphaf = 0.001;
 learning_params.alphat = parametrize_learning_law(alpha0, alphaf, t0, tf_learn_in, 'invtime');
+% cross-modal learning rule type
+cross_learning = 'oja';    % {hebb - Hebbain, covariance - Covariance, oja - Oja's Local PCA}
+% mean activities for covariance learning
+avg1 = 0.0; avg2 = 0.0;
 %% NETWORK SIMULATION LOOP
 fprintf('Started training sequence ...\n');
 % present each entry in the dataset for MAX_EPOCHS epochs to train the net
@@ -107,12 +111,12 @@ for t = 1:tf_learn_cross
                     % with the same spread of the neurons tuning curves
                     switch(sensory_data.dist)
                         case 'uniform'
-                            populations(pidx).s(idx) = (N_NEURONS/N_SAMPLES);
+                            populations(pidx).s(idx) = 0.045;
+                            %populations(pidx).s(idx) = (N_NEURONS/N_SAMPLES);
                         case 'non-uniform'
                             populations(pidx).s(idx) = populations(pidx).s(idx) + ...
                                 learning_params.alphat(t)*hwi(idx)* ...
-                                0.5*((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
-                            %populations(pidx).s(idx) = (N_NEURONS/N_SAMPLES);
+                                ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
                     end
                 end
             end % end for population pidx
@@ -139,12 +143,29 @@ for t = 1:tf_learn_cross
             % update the activity for the next iteration
             populations(pidx).a = (1-ETA)*populations(pidx).a + ETA*act_cur;
         end
-        
-        % cross-modal Hebbian learning step: update the hebbian weights
-        populations(1).Wcross = (1-XI)*populations(1).Wcross + XI*populations(1).a*populations(2).a';
-        populations(2).Wcross = (1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a';
-    end
-    
+        % check which learning rule we employ
+        switch(cross_learning)
+            case 'hebb'
+                % cross-modal Hebbian learning rule
+                populations(1).Wcross = (1-XI)*populations(1).Wcross + XI*populations(1).a*populations(2).a';
+                populations(2).Wcross = (1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a';
+            case 'covariance'
+                % compute the mean value computation decay
+                OMEGA = 0.002 + 0.998/(t+1);
+                % compute the average activity for Hebbian covariance rule
+                avg1 = (1-OMEGA)*avg1 + OMEGA*populations(1).a;
+                avg2 = (1-OMEGA)*avg2 + OMEGA*populations(2).a;
+                % cross-modal Hebbian covariance learning rule: update the synaptic weights
+                populations(1).Wcross = (1-XI)*populations(1).Wcross + XI*(populations(1).a - avg1)*(populations(2).a - avg2)';
+                populations(2).Wcross = (1-XI)*populations(2).Wcross + XI*(populations(2).a - avg2)*(populations(1).a - avg1)';
+            case 'oja'
+                % Oja's local PCA learning rule
+                populations(1).Wcross = ((1-XI)*populations(1).Wcross + XI*populations(1).a*populations(2).a')/...
+                                        sqrt(sum(sum((1-XI)*populations(1).Wcross + XI*populations(1).a*populations(2).a')));
+                populations(2).Wcross = ((1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a')/...
+                                        sqrt(sum(sum((1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a')));
+        end
+    end % end for values in dataset
 end % end for training epochs
 fprintf('Ended training sequence. Presenting results ...\n');
 present_tuning_curves(populations(1), sensory_data);
