@@ -1,6 +1,6 @@
 %% SIMPLE IMPLEMENTATION OF THE UNSUPERVISED LEARNING OF RELATIONS NETWORK USING SOMs
 %% PREPARE ENVIRONMENT
-clear all; clc; close all; format long;
+clear all; clc; close all; format long; pause(2);
 %% INIT SIMULATION
 % enables dynamic visualization on network runtime
 DYN_VISUAL = 1;
@@ -9,68 +9,30 @@ N_SOM      = 2;
 % number of neurons in each population
 N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
-MAX_EPOCHS = 500;
+MAX_EPOCHS = 400;
 % number of data samples
-N_SAMPLES = 2222;
+N_SAMPLES = 2500;
 % decay factors
 ETA = 1.0; % activity decay
 XI = 1e-3; % weights decay
-%%% INIT INPUT DATA - RELATION IS EMBEDDED IN THE INPUT DATA PAIRS
+%% INIT INPUT DATA - RELATION IS EMBEDDED IN THE INPUT DATA PAIRS
 % switch between power-law relations (TODO add a more flexible way)
-exponent=3;
+exponent=2;
 % set up the interval of interest (i.e. +/- range)
 sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
 sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
-% generate training data
-switch (sensory_data.dist)
-    case 'uniform'
-        % generate NUM_VALS random samples in the given interval
-        sensory_data.x  = -sensory_data.range + rand(sensory_data.num_vals, 1)*(2*sensory_data.range);
-        sensory_data.y = sensory_data.x.^exponent;
-    case 'non-uniform'
-        % generate observations distributed as some continous heavy-tailed distribution. 
-        % options are powerlaw, lognormal, stretched (exponential), 
-        % cutoff (power-law), exponential, boundedplaw (powerlaw) and Gauss.
-        nufrnd_type  = 'gauss';
-        switch nufrnd_type
-            case 'powerlaw'
-                alpha = 2.5;
-                sensory_data.x = randht(sensory_data.num_vals, nufrnd_type, alpha);
-                sensory_data.y = sensory_data.x.^exponent;
-            case 'lognormal'
-                mu = 1;
-                sigma = 1;
-                sensory_data.x = randht(sensory_data.num_vals, nufrnd_type, mu, sigma);
-                sensory_data.y = sensory_data.x.^exponent;
-            case 'stretched'
-                lambda = 1;
-                beta = 1;
-                sensory_data.x = randht(sensory_data.num_vals, nufrnd_type, lambda, beta);
-                sensory_data.y = sensory_data.x.^exponent;          
-            case 'exponential'
-                lambda = 1;
-                sensory_data.x = randht(sensory_data.num_vals, nufrnd_type, lambda);
-                sensory_data.y = sensory_data.x.^exponent; 
-            case 'cutoff'
-                alpha = 2.5;
-                lambda = 1;
-                sensory_data.x = randht(sensory_data.num_vals, nufrnd_type, alpha, lambda);
-                sensory_data.y = sensory_data.x.^exponent;    
-            case 'boundedplaw'
-                sensory_data.x = rand(sensory_data.num_vals, 1)*(sensory_data.range);
-                sensory_data.x = nufrnd_plaw(sensory_data.x, 0.00001, sensory_data.range, exponent);
-                sensory_data.y = sensory_data.x.^exponent;
-            case 'gauss'
-                sensory_data.x  = randn(sensory_data.num_vals, 1)*(sensory_data.range/4);
-                sensory_data.y = sensory_data.x.^exponent;
-        end
-end
-%% CREATE NETWORK AND INITIALIZE
+% generate observations distributed as some continous heavy-tailed distribution.
+% options are decpowerlaw, incpowerlaw and Gauss
+% distribution
+nufrnd_type  = 'decpowerlaw';
+sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, nufrnd_type);
+sensory_data.y = sensory_data.x.^exponent;
+%% CREATE NETWORK AND INITIALIZE PARAMS
 % create a network of SOMs given the simulation constants
-populations = create_init_network(N_SOM, N_NEURONS, N_SAMPLES);
+populations = create_init_network(N_SOM, N_NEURONS);
 % init activity vector
 act_cur = zeros(N_NEURONS, 1);
 % init neighborhood function
@@ -88,7 +50,7 @@ alpha0 = 0.1;
 alphaf = 0.001;
 learning_params.alphat = parametrize_learning_law(alpha0, alphaf, t0, tf_learn_in, 'invtime');
 % cross-modal learning rule type
-cross_learning = 'hebb';    % {hebb - Hebbain, covariance - Covariance, oja - Oja's Local PCA}
+cross_learning = 'oja';    % {hebb - Hebbain, covariance - Covariance, oja - Oja's Local PCA}
 % mean activities for covariance learning
 avg1 = 0.0; avg2 = 0.0;
 %% NETWORK SIMULATION LOOP
@@ -128,15 +90,9 @@ for t = 1:tf_learn_cross
                     % update the spread of the tuning curve for current neuron
                     % at the moment we consider uniformly distributed values
                     % with the same spread of the neurons tuning curves
-                    switch(sensory_data.dist)
-                        case 'uniform'
-                            populations(pidx).s(idx) = N_NEURONS/N_SAMPLES;
-                        case 'non-uniform'
-%                             populations(pidx).s(idx) = populations(pidx).s(idx) + ...
-%                                 learning_params.alphat(t)*hwi(idx)* ...
-%                                 ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
-                            populations(pidx).s(idx) = N_NEURONS/N_SAMPLES;
-                    end
+                    % populations(pidx).s(idx) = populations(pidx).s(idx) + ...
+                    %    learning_params.alphat(t)*hwi(idx)* ...
+                    %    ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
                 end
             end % end for population pidx
         end % end samples in the dataset
@@ -187,10 +143,11 @@ for t = 1:tf_learn_cross
     end % end for values in dataset
 end % end for training epochs
 fprintf('Ended training sequence. Presenting results ...\n');
+%% VISUALIZATION 
 present_tuning_curves(populations(1), sensory_data);
 present_tuning_curves(populations(2), sensory_data);
-% normalize weights between [0,1]
+% normalize weights between [0,1] for display
 populations(1).Wcross = populations(1).Wcross ./ max(populations(1).Wcross(:));
 populations(2).Wcross = populations(2).Wcross ./ max(populations(2).Wcross(:));
 % visualize post-simulation weight matrices encoding learned relation
-visualize_runtime(sensory_data, populations(pidx), length(sensory_data.x), learning_params);
+visualize_results(sensory_data, populations);
