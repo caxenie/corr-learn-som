@@ -2,7 +2,7 @@
 % [vmin, vmax] for a powerlaw function
 function y = randnum_gen(rtype, vrange, num_vals, dtype)
 % exponent of powerlaw distribution of values
-expn = 2;
+expn = 3;
 % create a uniformly distributed vector of values
 x = rand(num_vals, 1)*vrange;
 % init bounds

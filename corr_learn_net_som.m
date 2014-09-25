@@ -27,7 +27,7 @@ sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
 % generate observations distributed as some continous heavy-tailed distribution.
 % options are decpowerlaw, incpowerlaw and Gauss
 % distribution
-nufrnd_type  = 'decpowerlaw';
+nufrnd_type  = 'convex';
 sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, nufrnd_type);
 sensory_data.y = sensory_data.x.^exponent;
 %% CREATE NETWORK AND INITIALIZE PARAMS
@@ -50,7 +50,7 @@ alpha0 = 0.1;
 alphaf = 0.001;
 learning_params.alphat = parametrize_learning_law(alpha0, alphaf, t0, tf_learn_in, 'invtime');
 % cross-modal learning rule type
-cross_learning = 'oja';    % {hebb - Hebbain, covariance - Covariance, oja - Oja's Local PCA}
+cross_learning = 'covariance';    % {hebb - Hebbain, covariance - Covariance, oja - Oja's Local PCA}
 % mean activities for covariance learning
 avg1 = 0.0; avg2 = 0.0;
 %% NETWORK SIMULATION LOOP
@@ -150,4 +150,4 @@ present_tuning_curves(populations(2), sensory_data);
 populations(1).Wcross = populations(1).Wcross ./ max(populations(1).Wcross(:));
 populations(2).Wcross = populations(2).Wcross ./ max(populations(2).Wcross(:));
 % visualize post-simulation weight matrices encoding learned relation
-visualize_results(sensory_data, populations);
+lrn_fct = visualize_results(sensory_data, populations);
