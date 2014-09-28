@@ -9,9 +9,9 @@ N_SOM      = 2;
 % number of neurons in each population
 N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
-MAX_EPOCHS = 400;
+MAX_EPOCHS = 40;
 % number of data samples
-N_SAMPLES = 2500;
+N_SAMPLES = 100;
 % decay factors
 ETA = 1.0; % activity decay
 XI = 1e-3; % weights decay
@@ -23,11 +23,11 @@ sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
-sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
+sensory_data.dist = 'uniform'; % {uniform, non-uniform}
 % generate observations distributed as some continous heavy-tailed distribution.
 % options are decpowerlaw, incpowerlaw and Gauss
 % distribution
-nufrnd_type  = 'convex';
+nufrnd_type  = '';
 sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, nufrnd_type);
 sensory_data.y = sensory_data.x.^exponent;
 %% CREATE NETWORK AND INITIALIZE PARAMS
@@ -151,3 +151,7 @@ populations(1).Wcross = populations(1).Wcross ./ max(populations(1).Wcross(:));
 populations(2).Wcross = populations(2).Wcross ./ max(populations(2).Wcross(:));
 % visualize post-simulation weight matrices encoding learned relation
 lrn_fct = visualize_results(sensory_data, populations);
+% save runtime data in a file for later analysis
+runtime_data_file = sprintf('runtime_data_%d_soms_%d_neurons_learn_pow(x,%d)_%d_samples_data_dist_%s_%s_train_epochs_%d.dat',...
+                                         N_SOM, N_NEURONS, exponent, N_SAMPLES, sensory_data.dist, nufrnd_type, MAX_EPOCHS);
+save(runtime_data_file);
