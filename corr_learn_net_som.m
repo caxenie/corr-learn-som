@@ -9,9 +9,9 @@ N_SOM      = 2;
 % number of neurons in each population
 N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
-MAX_EPOCHS = 40;
+MAX_EPOCHS = 400;
 % number of data samples
-N_SAMPLES = 100;
+N_SAMPLES = 1500;
 % decay factors
 ETA = 1.0; % activity decay
 XI = 1e-3; % weights decay
@@ -23,12 +23,12 @@ sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
-sensory_data.dist = 'uniform'; % {uniform, non-uniform}
+sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
 % generate observations distributed as some continous heavy-tailed distribution.
 % options are decpowerlaw, incpowerlaw and Gauss
 % distribution
-nufrnd_type  = '';
-sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, nufrnd_type);
+sensory_data.nufrnd_type  = 'convex';
+sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, sensory_data.nufrnd_type);
 sensory_data.y = sensory_data.x.^exponent;
 %% CREATE NETWORK AND INITIALIZE PARAMS
 % create a network of SOMs given the simulation constants
@@ -88,11 +88,9 @@ for t = 1:tf_learn_cross
                     populations(pidx).Winput(idx) = populations(pidx).Winput(idx) + ...
                         learning_params.alphat(t)*hwi(idx)*(input_sample - populations(pidx).Winput(idx));
                     % update the spread of the tuning curve for current neuron
-                    % at the moment we consider uniformly distributed values
-                    % with the same spread of the neurons tuning curves
-                    % populations(pidx).s(idx) = populations(pidx).s(idx) + ...
-                    %    learning_params.alphat(t)*hwi(idx)* ...
-                    %    ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
+                    populations(pidx).s(idx) = populations(pidx).s(idx) + ...
+                       learning_params.alphat(t)*hwi(idx)* ...
+                       ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
                 end
             end % end for population pidx
         end % end samples in the dataset
@@ -152,6 +150,6 @@ populations(2).Wcross = populations(2).Wcross ./ max(populations(2).Wcross(:));
 % visualize post-simulation weight matrices encoding learned relation
 lrn_fct = visualize_results(sensory_data, populations);
 % save runtime data in a file for later analysis
-runtime_data_file = sprintf('runtime_data_%d_soms_%d_neurons_learn_pow(x,%d)_%d_samples_data_dist_%s_%s_train_epochs_%d.dat',...
+runtime_data_file = sprintf('runtime_data_%d_soms_%d_neurons_learn_pow(x,%d)_%d_samples_data_dist_%s_%s_train_epochs_%d.mat',...
                                          N_SOM, N_NEURONS, exponent, N_SAMPLES, sensory_data.dist, nufrnd_type, MAX_EPOCHS);
 save(runtime_data_file);
