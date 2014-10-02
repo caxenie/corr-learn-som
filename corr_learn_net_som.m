@@ -16,8 +16,6 @@ N_SAMPLES = 1500;
 ETA = 1.0; % activity decay
 XI = 1e-3; % weights decay
 %% INIT INPUT DATA - RELATION IS EMBEDDED IN THE INPUT DATA PAIRS
-% switch between power-law relations (TODO add a more flexible way)
-exponent=2;
 % set up the interval of interest (i.e. +/- range)
 sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
@@ -29,8 +27,10 @@ sensory_data.dist = 'uniform'; % {uniform, non-uniform}
 % distribution
 sensory_data.nufrnd_type  = '';
 sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, sensory_data.nufrnd_type);
+% switch between power-law relations (TODO add a more flexible way)
+exponent=2;
 sensory_data.y = sensory_data.x.^exponent;
-sensory_data.z = sensory_data.x./exponent;
+sensory_data.z = sensory_data.x./exponent+exponent;
 %% CREATE NETWORK AND INITIALIZE PARAMS
 % create a network of SOMs given the simulation constants
 populations = create_init_network(N_SOM, N_NEURONS);
@@ -53,7 +53,7 @@ learning_params.alphat = parametrize_learning_law(alpha0, alphaf, t0, tf_learn_i
 % cross-modal learning rule type
 cross_learning = 'covariance';    % {hebb - Hebbain, covariance - Covariance, oja - Oja's Local PCA}
 % mean activities for covariance learning
-avg1 = 0.0; avg2 = 0.0; avg3 = 0.0;
+avg_act=zeros(N_NEURONS, N_SOM);
 %% NETWORK SIMULATION LOOP
 fprintf('Started training sequence ...\n');
 % present each entry in the dataset for MAX_EPOCHS epochs to train the net
@@ -63,7 +63,7 @@ for t = 1:tf_learn_cross
         for didx = 1:sensory_data.num_vals
             % loop through populations
             for pidx = 1:N_SOM
-                % pick a new sample from the dataset and feed it to the current layerN_SAMPLES
+                % pick a new sample from the dataset and feed it to the current layer
                 switch pidx
                     case 1
                         input_sample = sensory_data.x(didx);
@@ -138,16 +138,16 @@ for t = 1:tf_learn_cross
                 % compute the mean value computation decay
                 OMEGA = 0.002 + 0.998/(t+2);
                 % compute the average activity for Hebbian covariance rule
-                avg1 = (1-OMEGA)*avg1 + OMEGA*populations(1).a;
-                avg2 = (1-OMEGA)*avg2 + OMEGA*populations(2).a;
-                avg3 = (1-OMEGA)*avg3 + OMEGA*populations(3).a;
+                for pidx = 1:N_SOM
+                    avg_act(:, pidx) = (1-OMEGA)*avg_act(:, pidx) + OMEGA*populations(pidx).a;
+                end
                 % cross-modal Hebbian covariance learning rule: update the synaptic weights
-                populations(1).Wcross1 = (1-XI)*populations(1).Wcross1 + XI*(populations(1).a - avg1)*(populations(2).a - avg2)';
-                populations(1).Wcross2 = (1-XI)*populations(1).Wcross2 + XI*(populations(1).a - avg1)*(populations(3).a - avg3)';
-                populations(2).Wcross1 = (1-XI)*populations(2).Wcross1 + XI*(populations(2).a - avg2)*(populations(1).a - avg1)';
-                populations(2).Wcross2 = (1-XI)*populations(2).Wcross2 + XI*(populations(2).a - avg2)*(populations(3).a - avg3)';
-                populations(3).Wcross1 = (1-XI)*populations(3).Wcross1 + XI*(populations(3).a - avg3)*(populations(1).a - avg1)';
-                populations(3).Wcross2 = (1-XI)*populations(3).Wcross2 + XI*(populations(3).a - avg3)*(populations(2).a - avg2)';
+                populations(1).Wcross1 = (1-XI)*populations(1).Wcross1 + XI*(populations(1).a - avg_act(:, 1))*(populations(2).a - avg_act(:, 2))';
+                populations(1).Wcross2 = (1-XI)*populations(1).Wcross2 + XI*(populations(1).a - avg_act(:, 1))*(populations(3).a - avg_act(:, 3))';
+                populations(2).Wcross1 = (1-XI)*populations(2).Wcross1 + XI*(populations(2).a - avg_act(:, 2))*(populations(1).a - avg_act(:, 1))';
+                populations(2).Wcross2 = (1-XI)*populations(2).Wcross2 + XI*(populations(2).a - avg_act(:, 2))*(populations(3).a - avg_act(:, 3))';
+                populations(3).Wcross1 = (1-XI)*populations(3).Wcross1 + XI*(populations(3).a - avg_act(:, 3))*(populations(1).a - avg_act(:, 1))';
+                populations(3).Wcross2 = (1-XI)*populations(3).Wcross2 + XI*(populations(3).a - avg_act(:, 3))*(populations(2).a - avg_act(:, 2))';
             case 'oja'
                 % Oja's local PCA learning rule
                 populations(1).Wcross1 = ((1-XI)*populations(1).Wcross1 + XI*populations(1).a*populations(2).a')/...
