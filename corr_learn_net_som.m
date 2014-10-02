@@ -5,7 +5,7 @@ clear all; clc; close all; format long; pause(2);
 % enables dynamic visualization on network runtime
 DYN_VISUAL = 1;
 % number of populations in the network
-N_SOM      = 2;
+N_SOM      = 3;
 % number of neurons in each population
 N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
@@ -23,13 +23,14 @@ sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
-sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
+sensory_data.dist = 'uniform'; % {uniform, non-uniform}
 % generate observations distributed as some continous heavy-tailed distribution.
 % options are decpowerlaw, incpowerlaw and Gauss
 % distribution
-sensory_data.nufrnd_type  = 'convex';
+sensory_data.nufrnd_type  = '';
 sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, sensory_data.nufrnd_type);
 sensory_data.y = sensory_data.x.^exponent;
+sensory_data.z = sensory_data.x./exponent;
 %% CREATE NETWORK AND INITIALIZE PARAMS
 % create a network of SOMs given the simulation constants
 populations = create_init_network(N_SOM, N_NEURONS);
@@ -52,7 +53,7 @@ learning_params.alphat = parametrize_learning_law(alpha0, alphaf, t0, tf_learn_i
 % cross-modal learning rule type
 cross_learning = 'covariance';    % {hebb - Hebbain, covariance - Covariance, oja - Oja's Local PCA}
 % mean activities for covariance learning
-avg1 = 0.0; avg2 = 0.0;
+avg1 = 0.0; avg2 = 0.0; avg3 = 0.0;
 %% NETWORK SIMULATION LOOP
 fprintf('Started training sequence ...\n');
 % present each entry in the dataset for MAX_EPOCHS epochs to train the net
@@ -62,11 +63,14 @@ for t = 1:tf_learn_cross
         for didx = 1:sensory_data.num_vals
             % loop through populations
             for pidx = 1:N_SOM
-                % pick a new sample from the dataset and feed it to the current layer
-                if(pidx==1)
-                    input_sample = sensory_data.x(didx);
-                else
-                    input_sample = sensory_data.y(didx);
+                % pick a new sample from the dataset and feed it to the current layerN_SAMPLES
+                switch pidx
+                    case 1
+                        input_sample = sensory_data.x(didx);
+                    case 2           
+                        input_sample = sensory_data.y(didx);
+                    case 3
+                        input_sample = sensory_data.z(didx);
                 end
                 % compute new activity given the current input sample
                 for idx = 1:populations(pidx).lsize
@@ -101,11 +105,14 @@ for t = 1:tf_learn_cross
         % loop through populations
         for pidx = 1:N_SOM
             % pick a new sample from the dataset and feed it to the current layer
-            if(pidx==1)
-                input_sample = sensory_data.x(didx);
-            else
-                input_sample = sensory_data.y(didx);
-            end
+                switch pidx
+                    case 1
+                        input_sample = sensory_data.x(didx);
+                    case 2           
+                        input_sample = sensory_data.y(didx);
+                    case 3
+                        input_sample = sensory_data.z(didx);
+                end
             % compute new activity given the current input sample
             for idx = 1:populations(pidx).lsize
                 act_cur(idx) = (1/(sqrt(2*pi)*populations(pidx).s(idx)))*...
@@ -120,23 +127,41 @@ for t = 1:tf_learn_cross
         switch(cross_learning)
             case 'hebb'
                 % cross-modal Hebbian learning rule
-                populations(1).Wcross = (1-XI)*populations(1).Wcross + XI*populations(1).a*populations(2).a';
-                populations(2).Wcross = (1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a';
+                populations(1).Wcross1 = (1-XI)*populations(1).Wcross1 + XI*populations(1).a*populations(2).a';
+                populations(1).Wcross2 = (1-XI)*populations(1).Wcross2 + XI*populations(1).a*populations(3).a';
+                populations(2).Wcross1 = (1-XI)*populations(2).Wcross1 + XI*populations(2).a*populations(1).a';
+                populations(2).Wcross2 = (1-XI)*populations(2).Wcross2 + XI*populations(2).a*populations(3).a';
+                populations(3).Wcross1 = (1-XI)*populations(3).Wcross1 + XI*populations(3).a*populations(1).a';
+                populations(3).Wcross2 = (1-XI)*populations(3).Wcross2 + XI*populations(3).a*populations(2).a';
+                
             case 'covariance'
                 % compute the mean value computation decay
                 OMEGA = 0.002 + 0.998/(t+2);
                 % compute the average activity for Hebbian covariance rule
                 avg1 = (1-OMEGA)*avg1 + OMEGA*populations(1).a;
                 avg2 = (1-OMEGA)*avg2 + OMEGA*populations(2).a;
+                avg3 = (1-OMEGA)*avg3 + OMEGA*populations(3).a;
                 % cross-modal Hebbian covariance learning rule: update the synaptic weights
-                populations(1).Wcross = (1-XI)*populations(1).Wcross + XI*(populations(1).a - avg1)*(populations(2).a - avg2)';
-                populations(2).Wcross = (1-XI)*populations(2).Wcross + XI*(populations(2).a - avg2)*(populations(1).a - avg1)';
+                populations(1).Wcross1 = (1-XI)*populations(1).Wcross1 + XI*(populations(1).a - avg1)*(populations(2).a - avg2)';
+                populations(1).Wcross2 = (1-XI)*populations(1).Wcross2 + XI*(populations(1).a - avg1)*(populations(3).a - avg3)';
+                populations(2).Wcross1 = (1-XI)*populations(2).Wcross1 + XI*(populations(2).a - avg2)*(populations(1).a - avg1)';
+                populations(2).Wcross2 = (1-XI)*populations(2).Wcross2 + XI*(populations(2).a - avg2)*(populations(3).a - avg3)';
+                populations(3).Wcross1 = (1-XI)*populations(3).Wcross1 + XI*(populations(3).a - avg3)*(populations(1).a - avg1)';
+                populations(3).Wcross2 = (1-XI)*populations(3).Wcross2 + XI*(populations(3).a - avg3)*(populations(2).a - avg2)';
             case 'oja'
                 % Oja's local PCA learning rule
-                populations(1).Wcross = ((1-XI)*populations(1).Wcross + XI*populations(1).a*populations(2).a')/...
-                    sqrt(sum(sum((1-XI)*populations(1).Wcross + XI*populations(1).a*populations(2).a')));
-                populations(2).Wcross = ((1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a')/...
-                    sqrt(sum(sum((1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a')));
+                populations(1).Wcross1 = ((1-XI)*populations(1).Wcross1 + XI*populations(1).a*populations(2).a')/...
+                    sqrt(sum(sum((1-XI)*populations(1).Wcross1 + XI*populations(1).a*populations(2).a')));
+                populations(1).Wcross2 = ((1-XI)*populations(1).Wcross2 + XI*populations(1).a*populations(3).a')/...
+                    sqrt(sum(sum((1-XI)*populations(1).Wcross2 + XI*populations(1).a*populations(3).a')));
+                populations(2).Wcross1 = ((1-XI)*populations(2).Wcross1 + XI*populations(2).a*populations(1).a')/...
+                    sqrt(sum(sum((1-XI)*populations(2).Wcross1 + XI*populations(2).a*populations(1).a')));
+                populations(2).Wcross2 = ((1-XI)*populations(2).Wcross2 + XI*populations(2).a*populations(3).a')/...
+                    sqrt(sum(sum((1-XI)*populations(2).Wcross2 + XI*populations(2).a*populations(3).a')));
+                populations(3).Wcross1 = ((1-XI)*populations(3).Wcross1 + XI*populations(3).a*populations(1).a')/...
+                    sqrt(sum(sum((1-XI)*populations(3).Wcross1 + XI*populations(3).a*populations(1).a')));
+                populations(3).Wcross2 = ((1-XI)*populations(3).Wcross2 + XI*populations(3).a*populations(2).a')/...
+                    sqrt(sum(sum((1-XI)*populations(3).Wcross2 + XI*populations(3).a*populations(2).a')));
         end
     end % end for values in dataset
 end % end for training epochs
@@ -144,12 +169,17 @@ fprintf('Ended training sequence. Presenting results ...\n');
 %% VISUALIZATION 
 present_tuning_curves(populations(1), sensory_data);
 present_tuning_curves(populations(2), sensory_data);
+present_tuning_curves(populations(3), sensory_data);
 % normalize weights between [0,1] for display
-populations(1).Wcross = populations(1).Wcross ./ max(populations(1).Wcross(:));
-populations(2).Wcross = populations(2).Wcross ./ max(populations(2).Wcross(:));
+populations(1).Wcross1 = populations(1).Wcross1 ./ max(populations(1).Wcross1(:));
+populations(2).Wcross1 = populations(2).Wcross1 ./ max(populations(2).Wcross1(:));
+populations(3).Wcross1 = populations(3).Wcross1 ./ max(populations(3).Wcross1(:));
+populations(1).Wcross2 = populations(1).Wcross2 ./ max(populations(1).Wcross2(:));
+populations(2).Wcross2 = populations(2).Wcross2 ./ max(populations(2).Wcross2(:));
+populations(3).Wcross2 = populations(3).Wcross2 ./ max(populations(3).Wcross2(:));
 % visualize post-simulation weight matrices encoding learned relation
 lrn_fct = visualize_results(sensory_data, populations);
 % save runtime data in a file for later analysis
 runtime_data_file = sprintf('runtime_data_%d_soms_%d_neurons_learn_pow(x,%d)_%d_samples_data_dist_%s_%s_train_epochs_%d.mat',...
-                                         N_SOM, N_NEURONS, exponent, N_SAMPLES, sensory_data.dist, nufrnd_type, MAX_EPOCHS);
+                                         N_SOM, N_NEURONS, exponent, N_SAMPLES, sensory_data.dist, sensory_data.nufrnd_type, MAX_EPOCHS);
 save(runtime_data_file);
