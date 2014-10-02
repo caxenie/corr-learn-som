@@ -7,11 +7,9 @@ subplot(4,1,1);
 % density of the learned tuning curves, this is the sensory prior p(s)
 switch pop.idx
     case 1
-        hist(sdata.x); box off;
+        hist(sdata.x, 100); box off;
     case 2
-        hist(sdata.y); box off;
-    case 3
-        hist(sdata.z); box off;
+        hist(sdata.y, 100); box off;
 end
 xlabel(sprintf('input data population %d ', pop.idx)); ylabel('input values distribution');
 subplot(4, 1, 2);
@@ -34,7 +32,7 @@ xlabel('neuron index'); ylabel('learned tuning curves');
 % with the increase of the distribution of sensory data (directly proportional with p(s))
 % stimuli associated with the peaks of the tuning curves
 subplot(4,1,3);
-hist(pop.Winput);
+hist(pop.Winput, 100);
 xlabel('input values distribution'); ylabel('# of allocated neurons');
 % the shape of the tuning curves (shape functions) - should increase with
 % values distribution decrease (inverse proportionally with sensory prior p(s))
