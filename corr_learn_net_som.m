@@ -11,7 +11,7 @@ N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
 MAX_EPOCHS = 400;
 % number of data samples
-N_SAMPLES = 1500;
+N_SAMPLES = 1000;
 % decay factors
 ETA = 1.0; % activity decay
 XI = 1e-3; % weights decay
@@ -50,7 +50,7 @@ alpha0 = 0.1;
 alphaf = 0.001;
 learning_params.alphat = parametrize_learning_law(alpha0, alphaf, t0, tf_learn_in, 'invtime');
 % cross-modal learning rule type
-cross_learning = 'covariance';    % {hebb - Hebbain, covariance - Covariance, oja - Oja's Local PCA}
+cross_learning = 'covariance';    % {hebb - Hebbian, covariance - Covariance, oja - Oja's Local PCA}
 % mean activities for covariance learning
 avg_act=zeros(N_NEURONS, N_SOM);
 %% NETWORK SIMULATION LOOP
@@ -91,8 +91,7 @@ for t = 1:tf_learn_cross
                     % update the shape of the tuning curve for current neuron
                     populations(pidx).s(idx) = populations(pidx).s(idx) + ...
                        learning_params.alphat(t)*...
-                       ...1/(sqrt(2*pi*learning_params.sigmat(1)^2))*...
-                       0.005*...
+                       (1/(sqrt(2*pi)*learning_params.sigmat(1)))*...
                        exp(-norm(idx - win_pos)^2/(2*learning_params.sigmat(t)^2))*...
                        ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
                 end
@@ -127,7 +126,6 @@ for t = 1:tf_learn_cross
                 % cross-modal Hebbian learning rule
                 populations(1).Wcross = (1-XI)*populations(1).Wcross + XI*populations(1).a*populations(2).a';
                 populations(2).Wcross = (1-XI)*populations(2).Wcross + XI*populations(2).a*populations(1).a';
-                
             case 'covariance'
                 % compute the mean value computation decay
                 OMEGA = 0.002 + 0.998/(t+2);
