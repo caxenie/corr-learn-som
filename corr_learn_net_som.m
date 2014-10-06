@@ -11,7 +11,7 @@ N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
 MAX_EPOCHS = 400;
 % number of data samples
-N_SAMPLES = 1000;
+N_SAMPLES = 1500;
 % decay factors
 ETA = 1.0; % activity decay
 XI = 1e-3; % weights decay
@@ -28,7 +28,7 @@ sensory_data.dist = 'uniform'; % {uniform, non-uniform}
 sensory_data.nufrnd_type  = '';
 sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, sensory_data.nufrnd_type);
 % switch between power-law relations (TODO add a more flexible way)
-exponent=3;
+exponent=2;
 sensory_data.y = sensory_data.x.^exponent;
 %% CREATE NETWORK AND INITIALIZE PARAMS
 % create a network of SOMs given the simulation constants
@@ -39,10 +39,10 @@ act_cur = zeros(N_NEURONS, 1);
 hwi = zeros(N_NEURONS, 1);
 % learning params
 t0 = 1;
-tf_learn_in = MAX_EPOCHS/10;
+tf_learn_in = MAX_EPOCHS/4;
 tf_learn_cross = MAX_EPOCHS;
 % init width of neighborhood kernel
-sigma0 = N_NEURONS/2;
+sigma0 = N_NEURONS/10;
 sigmaf = 1.0;
 learning_params.sigmat = parametrize_learning_law(sigma0, sigmaf, t0, tf_learn_in, 'invtime');
 % init learning rate
@@ -83,7 +83,7 @@ for t = 1:tf_learn_cross
                 % by the input sample
                 [win_act, win_pos] = max(populations(pidx).a);
                 for idx = 1:N_NEURONS % go through neurons in the population
-                    % cooperation step: compute the neighborhood kernell
+                    % cooperation step: compute the neighborhood kernel
                     hwi(idx) = exp(-norm(idx - win_pos)^2/(2*learning_params.sigmat(t)^2));
                     % learning step: compute the weight update
                     populations(pidx).Winput(idx) = populations(pidx).Winput(idx) + ...
