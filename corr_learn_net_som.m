@@ -21,11 +21,11 @@ sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
-sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
+sensory_data.dist = 'uniform'; % {uniform, non-uniform}
 % generate observations distributed as some continous heavy-tailed distribution.
 % options are decpowerlaw, incpowerlaw and Gauss
 % distribution
-sensory_data.nufrnd_type  = 'gauss';
+sensory_data.nufrnd_type  = '';
 sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, sensory_data.nufrnd_type);
 % switch between power-law relations (TODO add a more flexible way)
 exponent=3;

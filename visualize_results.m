@@ -17,7 +17,7 @@ id_maxv = zeros(populations(1).lsize, 1);
 for idx = 1:populations(1).lsize
     [~, id_maxv(idx)] = max(populations(1).Wcross(idx, :));
 end
-imagesc(rot90(populations(1).Wcross), [0, 1]); box off; colorbar;
+imagesc((populations(1).Wcross)', [0, 1]); box off; colorbar;
 xlabel('X'); ylabel('Y');
 % learning parameters in different figures
 figure; set(gcf, 'color', 'w');
@@ -30,4 +30,10 @@ box off; ylabel('SOM neighborhood size'); xlabel('SOM training epochs');
 figure; set(gcf, 'color', 'w');
 etat = parametrize_learning_law(0.1, 0.001, learning_params.t0, learning_params.tf_learn_cross, 'invtime');
 plot(etat, 'm', 'LineWidth', 3); box off; ylabel('Hebbian Learning rate'); xlabel('Hebbian learning epochs'); 
+% show the topology learning (self organization)
+figure; set(gcf, 'color', 'w');
+subplot(2,1,1);
+plot(1:populations(1).lsize, populations(1).Winput, '.g'); xlabel('neuron index in pop 1'); ylabel('preferred value'); box off;
+subplot(2,1,2);
+plot(1:populations(2).lsize, populations(2).Winput, '.b'); xlabel('neuron index in pop 2'); ylabel('preferred value'); box off;
 end
