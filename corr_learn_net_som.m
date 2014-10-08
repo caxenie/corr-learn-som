@@ -21,14 +21,14 @@ sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
-sensory_data.dist = 'uniform'; % {uniform, non-uniform}
+sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
 % generate observations distributed as some continous heavy-tailed distribution.
 % options are decpowerlaw, incpowerlaw and Gauss
 % distribution
-sensory_data.nufrnd_type  = '';
+sensory_data.nufrnd_type  = 'gauss';
 sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, sensory_data.nufrnd_type);
 % switch between power-law relations (TODO add a more flexible way)
-exponent=2;
+exponent=3;
 sensory_data.y = sensory_data.x.^exponent;
 %% CREATE NETWORK AND INITIALIZE PARAMS
 % create a network of SOMs given the simulation constants
@@ -38,17 +38,17 @@ act_cur = zeros(N_NEURONS, 1);
 % init neighborhood function
 hwi = zeros(N_NEURONS, 1);
 % learning params
-t0 = 1;
-tf_learn_in = MAX_EPOCHS/4;
-tf_learn_cross = MAX_EPOCHS;
+learning_params.t0 = 1;
+learning_params.tf_learn_in = MAX_EPOCHS/4;
+learning_params.tf_learn_cross = MAX_EPOCHS;
 % init width of neighborhood kernel
 sigma0 = N_NEURONS/10;
 sigmaf = 1.0;
-learning_params.sigmat = parametrize_learning_law(sigma0, sigmaf, t0, tf_learn_in, 'invtime');
+learning_params.sigmat = parametrize_learning_law(sigma0, sigmaf, learning_params.t0, learning_params.tf_learn_in, 'invtime');
 % init learning rate
 alpha0 = 0.1;
 alphaf = 0.001;
-learning_params.alphat = parametrize_learning_law(alpha0, alphaf, t0, tf_learn_in, 'invtime');
+learning_params.alphat = parametrize_learning_law(alpha0, alphaf, learning_params.t0, learning_params.tf_learn_in, 'invtime');
 % cross-modal learning rule type
 cross_learning = 'covariance';    % {hebb - Hebbian, covariance - Covariance, oja - Oja's Local PCA}
 % mean activities for covariance learning
@@ -56,9 +56,9 @@ avg_act=zeros(N_NEURONS, N_SOM);
 %% NETWORK SIMULATION LOOP
 fprintf('Started training sequence ...\n');
 % present each entry in the dataset for MAX_EPOCHS epochs to train the net
-for t = 1:tf_learn_cross
+for t = 1:learning_params.tf_learn_cross
     % learn the sensory space data distribution
-    if(t<tf_learn_in)
+    if(t<learning_params.tf_learn_in)
         for didx = 1:sensory_data.num_vals
             % loop through populations
             for pidx = 1:N_SOM
@@ -153,7 +153,7 @@ present_tuning_curves(populations(2), sensory_data);
 populations(1).Wcross = populations(1).Wcross ./ max(populations(1).Wcross(:));
 populations(2).Wcross = populations(2).Wcross ./ max(populations(2).Wcross(:));
 % visualize post-simulation weight matrices encoding learned relation
-lrn_fct = visualize_results(sensory_data, populations);
+lrn_fct = visualize_results(sensory_data, populations, learning_params);
 % save runtime data in a file for later analysis
 runtime_data_file = sprintf('runtime_data_%d_soms_%d_neurons_%d_samples_data_dist_%s_%s_train_epochs_%d.mat',...
                                          N_SOM, N_NEURONS, N_SAMPLES, sensory_data.dist, sensory_data.nufrnd_type, MAX_EPOCHS);
