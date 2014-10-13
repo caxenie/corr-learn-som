@@ -9,7 +9,7 @@ N_SOM      = 2;
 % number of neurons in each population
 N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
-MAX_EPOCHS = 400;
+MAX_EPOCHS = 800;
 % number of data samples
 N_SAMPLES = 1500;
 % decay factors
@@ -21,11 +21,11 @@ sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
-sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
+sensory_data.dist = 'uniform'; % {uniform, non-uniform}
 % generate observations distributed as some continous heavy-tailed distribution.
 % options are decpowerlaw, incpowerlaw and Gauss
 % distribution
-sensory_data.nufrnd_type  = 'gauss';
+sensory_data.nufrnd_type  = '';
 sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, sensory_data.nufrnd_type);
 % switch between power-law relations (TODO add a more flexible way)
 exponent=2;
@@ -58,7 +58,7 @@ fprintf('Started training sequence ...\n');
 % present each entry in the dataset for MAX_EPOCHS epochs to train the net
 for t = 1:learning_params.tf_learn_cross
     % update visualization of the Hebbian links
-    visualize_runtime(populations);
+    visualize_runtime(populations, t);
     % learn the sensory space data distribution
     if(t<learning_params.tf_learn_in)
         for didx = 1:sensory_data.num_vals
