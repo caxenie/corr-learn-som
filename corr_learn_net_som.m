@@ -21,14 +21,14 @@ sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
 % choose between uniformly distributed data and non-uniform distribution
-sensory_data.dist = 'uniform'; % {uniform, non-uniform}
+sensory_data.dist = 'non-uniform'; % {uniform, non-uniform}
 % generate observations distributed as some continous heavy-tailed distribution.
 % options are decpowerlaw, incpowerlaw and Gauss
 % distribution
-sensory_data.nufrnd_type  = '';
+sensory_data.nufrnd_type  = 'gauss';
 sensory_data.x = randnum_gen(sensory_data.dist, sensory_data.range, sensory_data.num_vals, sensory_data.nufrnd_type);
 % switch between power-law relations (TODO add a more flexible way)
-exponent=3;
+exponent=2;
 sensory_data.y = sensory_data.x.^exponent;
 %% CREATE NETWORK AND INITIALIZE PARAMS
 % create a network of SOMs given the simulation constants
@@ -39,7 +39,7 @@ act_cur = zeros(N_NEURONS, 1);
 hwi = zeros(N_NEURONS, 1);
 % learning params
 learning_params.t0 = 1;
-learning_params.tf_learn_in = MAX_EPOCHS/4;
+learning_params.tf_learn_in = MAX_EPOCHS/1;
 learning_params.tf_learn_cross = MAX_EPOCHS;
 % init width of neighborhood kernel
 sigma0 = N_NEURONS/10;
@@ -50,13 +50,15 @@ alpha0 = 0.1;
 alphaf = 0.001;
 learning_params.alphat = parametrize_learning_law(alpha0, alphaf, learning_params.t0, learning_params.tf_learn_in, 'invtime');
 % cross-modal learning rule type
-cross_learning = 'covariance';    % {hebb - Hebbian, covariance - Covariance, oja - Oja's Local PCA}
+cross_learning = 'oja';    % {hebb - Hebbian, covariance - Covariance, oja - Oja's Local PCA}
 % mean activities for covariance learning
 avg_act=zeros(N_NEURONS, N_SOM);
 %% NETWORK SIMULATION LOOP
 fprintf('Started training sequence ...\n');
 % present each entry in the dataset for MAX_EPOCHS epochs to train the net
 for t = 1:learning_params.tf_learn_cross
+    % update visualization of the Hebbian links
+    visualize_runtime(populations);
     % learn the sensory space data distribution
     if(t<learning_params.tf_learn_in)
         for didx = 1:sensory_data.num_vals
@@ -66,7 +68,7 @@ for t = 1:learning_params.tf_learn_cross
                 switch pidx
                     case 1
                         input_sample = sensory_data.x(didx);
-                    case 2           
+                    case 2
                         input_sample = sensory_data.y(didx);
                 end
                 % compute new activity given the current input sample
@@ -90,10 +92,9 @@ for t = 1:learning_params.tf_learn_cross
                         learning_params.alphat(t)*hwi(idx)*(input_sample - populations(pidx).Winput(idx));
                     % update the shape of the tuning curve for current neuron
                     populations(pidx).s(idx) = populations(pidx).s(idx) + ...
-                       learning_params.alphat(t)*...
-                       (1/(sqrt(2*pi)*learning_params.sigmat(1)))*...
-                       exp(-norm(idx - win_pos)^2/(2*learning_params.sigmat(t)^2))*...
-                       ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
+                        learning_params.alphat(t)*...
+                        exp(-norm(idx - win_pos)^2/(2*learning_params.sigmat(t)^2))*...
+                        ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
                 end
             end % end for population pidx
         end % end samples in the dataset
@@ -104,12 +105,12 @@ for t = 1:learning_params.tf_learn_cross
         % loop through populations
         for pidx = 1:N_SOM
             % pick a new sample from the dataset and feed it to the current layer
-                switch pidx
-                    case 1
-                        input_sample = sensory_data.x(didx);
-                    case 2           
-                        input_sample = sensory_data.y(didx);
-                end
+            switch pidx
+                case 1
+                    input_sample = sensory_data.x(didx);
+                case 2
+                    input_sample = sensory_data.y(didx);
+            end
             % compute new activity given the current input sample
             for idx = 1:populations(pidx).lsize
                 act_cur(idx) = (1/(sqrt(2*pi)*populations(pidx).s(idx)))*...
@@ -146,7 +147,7 @@ for t = 1:learning_params.tf_learn_cross
     end % end for values in dataset
 end % end for training epochs
 fprintf('Ended training sequence. Presenting results ...\n');
-%% VISUALIZATION 
+%% VISUALIZATION
 present_tuning_curves(populations(1), sensory_data);
 present_tuning_curves(populations(2), sensory_data);
 % normalize weights between [0,1] for display
@@ -156,5 +157,5 @@ populations(2).Wcross = populations(2).Wcross ./ max(populations(2).Wcross(:));
 lrn_fct = visualize_results(sensory_data, populations, learning_params);
 % save runtime data in a file for later analysis
 runtime_data_file = sprintf('runtime_data_%d_soms_%d_neurons_%d_samples_data_dist_%s_%s_train_epochs_%d.mat',...
-                                         N_SOM, N_NEURONS, N_SAMPLES, sensory_data.dist, sensory_data.nufrnd_type, MAX_EPOCHS);
+    N_SOM, N_NEURONS, N_SAMPLES, sensory_data.dist, sensory_data.nufrnd_type, MAX_EPOCHS);
 save(runtime_data_file);
