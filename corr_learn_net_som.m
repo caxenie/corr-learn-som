@@ -3,20 +3,20 @@
 clear all; clc; close all; format long; pause(2);
 %% INIT SIMULATION
 % enables dynamic visualization on network runtime
-DYN_VISUAL = 1;
+DYN_VISUAL = 0;
 % number of populations in the network
 N_SOM      = 2;
 % number of neurons in each population
 N_NEURONS  = 100;
 % max MAX_EPOCHS for SOM relaxation
-MAX_EPOCHS = 800;
+MAX_EPOCHS = 400;
 % number of data samples
 N_SAMPLES = 1500;
 % decay factors
 ETA = 1.0; % activity decay
 XI = 1e-3; % weights decay
 %% INIT INPUT DATA - RELATION IS EMBEDDED IN THE INPUT DATA PAIRS
-% set up the interval of interest (i.e. +/- range)
+% set up the interval of interest (i.e. +/- range)ststr
 sensory_data.range  = 1.0;
 % setup the number of random input samples to generate
 sensory_data.num_vals = N_SAMPLES;
@@ -42,15 +42,15 @@ learning_params.t0 = 1;
 learning_params.tf_learn_in = MAX_EPOCHS/1;
 learning_params.tf_learn_cross = MAX_EPOCHS;
 % init width of neighborhood kernel
-sigma0 = N_NEURONS/10;
+sigma0 = N_NEURONS/2;
 sigmaf = 1.0;
 learning_params.sigmat = parametrize_learning_law(sigma0, sigmaf, learning_params.t0, learning_params.tf_learn_in, 'invtime');
 % init learning rate
 alpha0 = 0.1;
 alphaf = 0.001;
-learning_params.alphat = parametrize_learning_law(alpha0, alphaf, learning_params.t0, learning_params.tf_learn_in, 'invtime');
+learning_params.alphat = parametrize_learning_law(alpha0, alphaf, learning_params.t0, learning_params.tf_learn_in, 'invtime');  
 % cross-modal learning rule type
-cross_learning = 'oja';    % {hebb - Hebbian, covariance - Covariance, oja - Oja's Local PCA}
+cross_learning = 'covariance';    % {hebb - Hebbian, covariance - Covariance, oja - Oja's Local PCA}
 % mean activities for covariance learning
 avg_act=zeros(N_NEURONS, N_SOM);
 %% NETWORK SIMULATION LOOP
@@ -58,8 +58,9 @@ fprintf('Started training sequence ...\n');
 % present each entry in the dataset for MAX_EPOCHS epochs to train the net
 for t = 1:learning_params.tf_learn_cross
     % update visualization of the Hebbian links
-    visualize_runtime(populations, t);
-    % learn the sensory space data distribution
+    if DYN_VISUAL==1
+        visualize_runtime(populations, t);
+    end    % learn the sensory space data distribution
     if(t<learning_params.tf_learn_in)
         for didx = 1:sensory_data.num_vals
             % loop through populations
@@ -86,14 +87,16 @@ for t = 1:learning_params.tf_learn_cross
                 [win_act, win_pos] = max(populations(pidx).a);
                 for idx = 1:N_NEURONS % go through neurons in the population
                     % cooperation step: compute the neighborhood kernel
-                    hwi(idx) = exp(-norm(idx - win_pos)^2/(2*learning_params.sigmat(t)^2));
+                    % wrap up the population to avoid boundary effects
+                    % dist = min{|i-j|, N - |i-j|}
+                    hwi(idx) = exp(-norm(min([norm(idx-win_pos), N_NEURONS - norm(idx-win_pos)]))^2/(2*learning_params.sigmat(t)^2));
                     % learning step: compute the weight update
                     populations(pidx).Winput(idx) = populations(pidx).Winput(idx) + ...
                         learning_params.alphat(t)*hwi(idx)*(input_sample - populations(pidx).Winput(idx));
                     % update the shape of the tuning curve for current neuron
                     populations(pidx).s(idx) = populations(pidx).s(idx) + ...
                         learning_params.alphat(t)*...
-                        exp(-norm(idx - win_pos)^2/(2*learning_params.sigmat(t)^2))*...
+                        exp(-norm(min([norm(idx-win_pos), N_NEURONS - norm(idx-win_pos)]))^2/(2*learning_params.sigmat(t)^2))*...
                         ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
                 end
             end % end for population pidx
