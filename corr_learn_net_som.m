@@ -16,6 +16,8 @@ N_SAMPLES = 1500;
 % decay factors
 ETA = 1.0; % activity decay
 XI = 1e-3; % weights decay
+% enable population wrap-up to cancel out boundary effects 
+WRAP_ON = 0;
 %% INIT INPUT DATA - RELATION IS EMBEDDED IN THE INPUT DATA PAIRS
 % set up the interval of interest (i.e. +/- range)ststr
 sensory_data.range  = 1.0;
@@ -90,26 +92,24 @@ for t = 1:learning_params.tf_learn_cross
                 [win_act, win_pos] = max(populations(pidx).a);
                 for idx = 1:populations(pidx).lsize % go through neurons in the population
                     % cooperation step: compute the neighborhood kernel
-                    % wrap up the population to avoid boundary effects
-                    % dist = min{|i-j|, N - |i-j|}
-                    %hwi(idx) = exp(-norm(min([norm(idx-win_pos), N_NEURONS - norm(idx-win_pos)]))^2/(2*learning_params.sigmat(t)^2));
-                    % simple Gaussian kernel with no boundary compensation
-                    hwi(idx) = exp(-norm(idx-win_pos)^2/(2*learning_params.sigmat(t)^2));
+                    if(WRAP_ON==1)
+                        % wrap up the population to avoid boundary effects
+                        % dist = min{|i-j|, N - |i-j|}
+                        hwi(idx) = exp(-norm(min([norm(idx-win_pos), N_NEURONS - norm(idx-win_pos)]))^2/(2*learning_params.sigmat(t)^2));
+                    else
+                        % simple Gaussian kernel with no boundary compensation
+                        hwi(idx) = exp(-norm(idx-win_pos)^2/(2*learning_params.sigmat(t)^2));
+                    end
                     % learning step: compute the weight update
                     populations(pidx).Winput(idx) = populations(pidx).Winput(idx) + ...
                         learning_params.alphat(t)*...
                         hwi(idx)*...
                         (input_sample - populations(pidx).Winput(idx));
                     % update the shape of the tuning curve for current neuron
-                    % in case the populatio wraps up use the proper update rule                   
-                    % populations(pidx).s(idx) = populations(pidx).s(idx) + ...
-                    %      learning_params.alphat(t)*...
-                    %      exp(-norm(min([norm(idx-win_pos), N_NEURONS - norm(idx-win_pos)]))^2/(2*learning_params.sigmat(t)^2))*...
-                    %       ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
                     populations(pidx).s(idx) = populations(pidx).s(idx) + ...
                        learning_params.alphat(t)*...
                        (1/(sqrt(2*pi)*learning_params.sigmat(t)))*...
-                       exp(-norm(idx - win_pos)^2/(2*learning_params.sigmat(t)^2))*...
+                       hwi(idx)*...
                        ((input_sample - populations(pidx).Winput(idx))^2 - populations(pidx).s(idx)^2);
                 end
             end % end for population pidx
